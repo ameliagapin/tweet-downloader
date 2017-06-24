@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"regexp"
 	"strings"
 )
 
@@ -125,8 +126,11 @@ func writeTweets(tweets *[]anaconda.Tweet, filename string, doClean bool) {
 
 func clean(tweet anaconda.Tweet) string {
 	clean := ""
-	tokens := strings.Split(tweet.Text, " ")
 
+	var re = regexp.MustCompile(`\.\.\.`)
+	dirty := re.ReplaceAllString(tweet.Text, ` `)
+
+	tokens := strings.Split(dirty, " ")
 	for _, token := range tokens {
 		if strings.HasPrefix(token, "@") ||
 			strings.HasPrefix(token, "#") ||
@@ -142,5 +146,5 @@ func clean(tweet anaconda.Tweet) string {
 		}
 	}
 
-	return clean
+	return strings.ToLower(clean)
 }
