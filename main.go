@@ -18,8 +18,12 @@ const (
 	AccessSecret   string = ""
 )
 
-// File is the location in the user's home directory and filename to write to
-const File string = "Downloads/tweets_%s.txt"
+const (
+	// File is the location in the user's home directory and filename to write to
+	File string = "Downloads/tweets_%s.txt"
+	// MaxTweets is the maximum number of tweets to download
+	MaxTweets int = 3200
+)
 
 func main() {
 	var doClean bool
@@ -69,7 +73,7 @@ func getTweets(api *anaconda.TwitterApi, username string) *[]anaconda.Tweet {
 
 	var tweets []anaconda.Tweet
 
-	for counter < 400 {
+	for counter < MaxTweets {
 		batch, err := api.GetUserTimeline(v)
 
 		if err != nil {
