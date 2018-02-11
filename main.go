@@ -23,7 +23,13 @@ const (
 	// File is the location in the user's home directory and filename to write to
 	File string = "Downloads/tweets_%s.txt"
 	// MaxTweets is the maximum number of tweets to download
-	MaxTweets int = 3200
+	MaxTweets int = 32000
+)
+
+var (
+	reEllipse = regexp.MustCompile(`\.\.\.`)
+	reLink    = regexp.MustCompile(`https?\:\/\/\S*`)
+	reAt      = regexp.MustCompile(`\@[a-zA-Z0-9_]*`)
 )
 
 func main() {
@@ -68,6 +74,7 @@ func getTweets(api *anaconda.TwitterApi, username string) *[]anaconda.Tweet {
 	v.Set("include_rts", "false")
 	v.Set("exclude_replies", "true")
 	v.Set("count", "200")
+	v.Set("tweet_mode", "extended")
 
 	counter := 0
 	var lastTweet *anaconda.Tweet
@@ -110,9 +117,9 @@ func writeTweets(tweets *[]anaconda.Tweet, filename string, doClean bool) {
 	defer f.Close()
 
 	for _, tweet := range *tweets {
-		text := tweet.Text
+		text := tweet.FullText
 		if doClean {
-			text = clean(tweet)
+			text = clean(text)
 		}
 
 		_, err := f.WriteString(text + "\n")
@@ -124,27 +131,10 @@ func writeTweets(tweets *[]anaconda.Tweet, filename string, doClean bool) {
 	f.Sync()
 }
 
-func clean(tweet anaconda.Tweet) string {
-	clean := ""
+func clean(text string) string {
+	dirty := reEllipse.ReplaceAllString(text, ` `)
+	dirty = reLink.ReplaceAllString(dirty, ` `)
+	clean := reAt.ReplaceAllString(dirty, ` `)
 
-	var re = regexp.MustCompile(`\.\.\.`)
-	dirty := re.ReplaceAllString(tweet.Text, ` `)
-
-	tokens := strings.Split(dirty, " ")
-	for _, token := range tokens {
-		if strings.HasPrefix(token, "@") ||
-			strings.HasPrefix(token, "#") ||
-			strings.HasPrefix(token, "http://") ||
-			strings.HasPrefix(token, "https://") {
-			continue
-		}
-
-		if clean == "" {
-			clean += token
-		} else {
-			clean += " " + token
-		}
-	}
-
-	return strings.ToLower(clean)
+	return clean
 }
